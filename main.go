@@ -17,15 +17,11 @@ import (
 )
 
 func getLatestArtifact() {
-
+	// TODO: Refactor all these steps into functions
 }
 
-func http500Error(w http.ResponseWriter, err error, msg ...string) {
-	if len(msg) > 0 {
-		log.Println(msg[0], err)
-	} else {
-		log.Println("Error: ", err)
-	}
+func http500Error(w http.ResponseWriter, err error, msg string) {
+	log.Println(msg, err)
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write([]byte("500 - Internal Server Error"))
 }
@@ -42,7 +38,7 @@ func deploy(w http.ResponseWriter, r *http.Request) {
 
 	_, resp, err := client.Users.Get(ctx, "")
 	if err != nil {
-		http500Error(w, err)
+		http500Error(w, err, "Error getting user: ")
 		return
 	}
 
@@ -166,7 +162,7 @@ func deploy(w http.ResponseWriter, r *http.Request) {
 
 			dstFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
 			if err != nil {
-				http500Error(w, err, "Error opening file: ")
+				http500Error(w, err, "Error opening file on disk: ")
 				panic(err)
 			}
 
@@ -199,15 +195,13 @@ func deploy(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Sucessfully deployed"))
 	}
-
 }
 
-// artifactListUrl := "https://api.github.com/repos/benallen-dev/benallen-dot-dev/actions/artifacts"
-// artifactDownloadUrl := "https://api.github.com/repos/benallen-dev/benallen-dot-dev/actions/artifacts/REPLACEME/zip"
-
 func hello(w http.ResponseWriter, r *http.Request) {
+
 	log.Println("Received request for path: ", r.URL.Path)
 	fmt.Fprintf(w, "Hello World!")
+
 }
 
 func main() {
