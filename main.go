@@ -12,12 +12,63 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"errors"
 
 	"github.com/google/go-github/v55/github"
 )
 
 func getLatestArtifact() {
 	// TODO: Refactor all these steps into functions
+}
+
+func extractArtifact(artifactFilename string, dst string) error {
+
+		archive, err := zip.OpenReader(artifactFilename)
+		if err != nil {
+			return err
+		}
+		defer archive.Close()
+
+		for _, f := range archive.File {
+			filePath := filepath.Join(dst, f.Name)
+			fmt.Println("unzipping file ", filePath)
+
+			if !strings.HasPrefix(filePath, filepath.Clean(dst)+string(os.PathSeparator)) {
+				return errors.New("illegal file path")
+			}
+
+			if f.FileInfo().IsDir() {
+				fmt.Println("creating directory...")
+				os.MkdirAll(filePath, os.ModePerm)
+				continue
+			}
+
+			if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
+				return err
+			}
+
+			dstFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+			if err != nil {
+				return err
+			}
+
+			fileInArchive, err := f.Open()
+			if err != nil {
+				return err
+			}
+
+			if _, err := io.Copy(dstFile, fileInArchive); err != nil {
+				return err
+			}
+
+			dstFile.Close()
+			fileInArchive.Close()
+		}
+
+		log.Println("Unzipped artifact")
+
+		// No errors, no problem
+		return nil
 }
 
 func http500Error(w http.ResponseWriter, err error, msg string) {
@@ -35,17 +86,6 @@ func deploy(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	token := "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"
 	client := github.NewClient(nil).WithAuthToken(token)
-
-	_, resp, err := client.Users.Get(ctx, "")
-	if err != nil {
-		http500Error(w, err, "Error getting user: ")
-		return
-	}
-
-	// If a Token Expiration has been set, it will be displayed.
-	if !resp.TokenExpiration.IsZero() {
-		log.Printf("Token Expiration: %v\n", resp.TokenExpiration)
-	}
 
 	// List artifacts for the website repo
 	artifacts, resp, err := client.Actions.ListArtifacts(ctx, "benallen-dev", "benallen-dot-dev", nil)
@@ -86,6 +126,7 @@ func deploy(w http.ResponseWriter, r *http.Request) {
 
 		log.Println("Artifact download URL: ", url)
 
+		// client.Client is the underlying http.Client used by the github client
 		fileContent, err := client.Client().Get(url.String())
 		if err != nil {
 			http500Error(w, err, "Error downloading artifact: ")
@@ -134,54 +175,11 @@ func deploy(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Unzip the artifact
-		archive, err := zip.OpenReader(artifactFilename)
+		err = extractArtifact(artifactFilename, dst, w)
 		if err != nil {
-			http500Error(w, err, "Error opening artifact file: ")
-			panic(err)
+			http500Error(w, err, "Error extracting artifact: ")
+			return
 		}
-		defer archive.Close()
-
-		for _, f := range archive.File {
-			filePath := filepath.Join(dst, f.Name)
-			fmt.Println("unzipping file ", filePath)
-
-			if !strings.HasPrefix(filePath, filepath.Clean(dst)+string(os.PathSeparator)) {
-				http500Error(w, err, "Error extracting file: ")
-				return
-			}
-			if f.FileInfo().IsDir() {
-				fmt.Println("creating directory...")
-				os.MkdirAll(filePath, os.ModePerm)
-				continue
-			}
-
-			if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
-				http500Error(w, err, "Error creating directory: ")
-				panic(err)
-			}
-
-			dstFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
-			if err != nil {
-				http500Error(w, err, "Error opening file on disk: ")
-				panic(err)
-			}
-
-			fileInArchive, err := f.Open()
-			if err != nil {
-				http500Error(w, err, "Error opening file in archive: ")
-				panic(err)
-			}
-
-			if _, err := io.Copy(dstFile, fileInArchive); err != nil {
-				http500Error(w, err, "Error copying file: ")
-				panic(err)
-			}
-
-			dstFile.Close()
-			fileInArchive.Close()
-		}
-
-		log.Println("Unzipped artifact")
 
 		// Delete the archive
 		err = os.Remove(artifactFilename)
