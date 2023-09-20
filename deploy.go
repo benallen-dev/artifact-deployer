@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"errors"
 	"log"
 	"io"
 	"net/http"
@@ -39,12 +40,16 @@ func deploy(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "PUT" {
 
+		log.Println("Received deployment request from " + r.RemoteAddr)
+		
 		// Parse the request body
 		params, err := getDeployParameters(r)
 		if err != nil {
 			http400Error(w, err, "Error parsing request body: ")
 			return
 		}
+
+		log.Println("Requested SHA:", params.HeadSha)
 
 		// Create a github client
 		ctx := context.Background()
@@ -61,18 +66,19 @@ func deploy(w http.ResponseWriter, r *http.Request) {
 		}
 
 		headSha := newest.GetWorkflowRun().GetHeadSHA()
-		log.Println("Head SHA: ", headSha)
+		log.Println("Head SHA:", headSha)
 
 		// Check if the SHA requested matches the newest artifact's commit SHA
 		if headSha != params.HeadSha {
-			http409Error(w, err, "Requested SHA is not the newest.")
+			err = errors.New("Requested SHA does not match the latest artifact.")
+			http409Error(w, err, "")
 			return
 		}
 
 		// Check if the handshake matches
 		ok := checkHandshake(params.Handshake, headSha)
 		if !ok {
-			http401Error(w, err, "Incorrect handshake.")
+			http403Error(w, err, "Incorrect handshake.")
 			return
 		}
 

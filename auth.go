@@ -19,7 +19,7 @@ func checkHandshake(handshake string, headSha string) bool {
 
 	// Compare the hash with the handshake
 	log.Println("Our hash: ", ourHash)
-	log.Println("Their hash: ", handshake)
+	log.Println("Their hash: ", []byte(handshake))
 
 
 	return false
