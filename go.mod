@@ -4,7 +4,7 @@ go 1.21.0
 
 require (
 	github.com/google/go-github/v55 v55.0.0
-	golang.org/x/term v0.12.0
+	github.com/joho/godotenv v1.5.1
 )
 
 require (

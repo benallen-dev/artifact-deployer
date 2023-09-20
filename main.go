@@ -14,6 +14,7 @@ import (
 	"time"
 	"errors"
 
+	"github.com/joho/godotenv"
 	"github.com/google/go-github/v55/github"
 )
 
@@ -88,7 +89,7 @@ func deploy(w http.ResponseWriter, r *http.Request) {
 	client := github.NewClient(nil).WithAuthToken(token)
 
 	// List artifacts for the website repo
-	artifacts, resp, err := client.Actions.ListArtifacts(ctx, "benallen-dev", "benallen-dot-dev", nil)
+	artifacts, _, err := client.Actions.ListArtifacts(ctx, "benallen-dev", "benallen-dot-dev", nil)
 	if err != nil {
 		http500Error(w, err, "Error getting artifacts: ")
 		return
@@ -175,7 +176,7 @@ func deploy(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Unzip the artifact
-		err = extractArtifact(artifactFilename, dst, w)
+		err = extractArtifact(artifactFilename, dst)
 		if err != nil {
 			http500Error(w, err, "Error extracting artifact: ")
 			return
@@ -204,17 +205,23 @@ func hello(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 
+	// Set up logging
 	log.SetPrefix("[AD] ")
 	log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmsgprefix)
 
-	// Create http client
+	// Load environment variables
+	err := godotenv.Load()
+
+	welcomeMsg := os.Getenv("WELCOME_MSG")
+	log.Println(welcomeMsg)
+
 	// Register routes
 	http.HandleFunc("/hello", hello)
 	http.HandleFunc("/deploy", deploy)
 
 	// Start the server
 	log.Println("Starting server on port 8080")
-	err := http.ListenAndServe(":8080", nil)
+	err = http.ListenAndServe(":8080", nil)
 	log.Fatal(err)
 
 }
