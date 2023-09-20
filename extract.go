@@ -1,15 +1,40 @@
 package main
 
 import (
-	"fmt"
-	"io"
+	"archive/zip"
 	"errors"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
-	"archive/zip"
+	"time"
 )
+
+func getDeployDestination() (string, error) {
+
+	// If it already exists, rename the existing directory
+	homedir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	dst := homedir + "/www/" + os.Getenv("SITE_DIR")
+
+	if _, err := os.Stat(dst); err == nil {
+		log.Println("Destination directory already exists, renaming existing dir with current time...")
+		// get current datetime
+		// rename existing directory to include datetime
+		datetime := time.Now().Format("2006-01-02--15-04-05")
+
+		err = os.Rename(dst, dst+"--"+datetime)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return dst, nil
+}
 
 func extractArtifact(artifactFilename string, dst string) error {
 
@@ -21,14 +46,12 @@ func extractArtifact(artifactFilename string, dst string) error {
 
 	for _, f := range archive.File {
 		filePath := filepath.Join(dst, f.Name)
-		fmt.Println("unzipping file ", filePath)
 
 		if !strings.HasPrefix(filePath, filepath.Clean(dst)+string(os.PathSeparator)) {
-			return errors.New("illegal file path")
+			return errors.New("illegal file path: " + filePath)
 		}
 
 		if f.FileInfo().IsDir() {
-			fmt.Println("creating directory...")
 			os.MkdirAll(filePath, os.ModePerm)
 			continue
 		}

@@ -2,17 +2,21 @@ package main
 
 import (
 	"context"
-	"github.com/google/go-github/v55/github"
 	"io"
 	"log"
 	"os"
 	"sort"
+
+	"github.com/google/go-github/v55/github"
 )
 
 func getNewestArtifact(ctx context.Context, client *github.Client) (*github.Artifact, error) {
 
+	githubUser := os.Getenv("GITHUB_USER")
+	githubRepo := os.Getenv("GITHUB_REPO")
+	
 	// List artifacts for the website repo
-	artifacts, _, err := client.Actions.ListArtifacts(ctx, "benallen-dev", "benallen-dot-dev", nil)
+	artifacts, _, err := client.Actions.ListArtifacts(ctx, githubUser, githubRepo, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -40,8 +44,6 @@ func downloadArtifact(ctx context.Context, client *github.Client, artifact *gith
 	if err != nil {
 		return err
 	}
-
-	log.Println("Artifact download URL: ", url)
 
 	// client.Client is the underlying http.Client used by the github client
 	fileContent, err := client.Client().Get(url.String())
