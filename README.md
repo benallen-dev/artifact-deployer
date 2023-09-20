@@ -51,3 +51,4 @@ go install
 
 ## Todo:
 - [ ] Check which SHA is deployed to avoid deploying more than once
+- [ ] I'm not super happy with how I'm doing code splitting here, having everything in the root as part of the `main` package feels a bit disorganised.
