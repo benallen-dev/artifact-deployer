@@ -16,7 +16,6 @@ func hello(w http.ResponseWriter, r *http.Request) {
 
 }
 
-
 func main() {
 
 	// Set up logging

@@ -16,5 +16,3 @@ A Go program that listens for HTTP requests and deploys the latest artifact from
 ## Todo:
 
 - [ ] Check which SHA is deployed to avoid deploying more than once
-- [ ] Validate requests so we can be sure the deploy request is legitimate
-- [ ] Some sort of rate limiting

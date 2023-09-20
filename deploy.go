@@ -2,24 +2,23 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 	"errors"
-	"log"
+	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
-	"encoding/json"
-	
+
 	"github.com/google/go-github/v55/github"
 )
 
-
 type DeployParameters struct {
-	HeadSha string
+	HeadSha   string
 	Handshake string
 }
 
-func getDeployParameters (r *http.Request) (*DeployParameters, error) {
+func getDeployParameters(r *http.Request) (*DeployParameters, error) {
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -41,7 +40,7 @@ func deploy(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "PUT" {
 
 		log.Println("Received deployment request from " + r.RemoteAddr)
-		
+
 		// Parse the request body
 		params, err := getDeployParameters(r)
 		if err != nil {
@@ -115,7 +114,7 @@ func deploy(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Sucessfully deployed")
 		log.Println("Sucessfully deployed")
 	} else {
-		log.Println("Received " + r.Method + " for path:", r.URL.Path)
+		log.Println("Received "+r.Method+" for path:", r.URL.Path)
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(w, "400 - Bad Request")
 	}
