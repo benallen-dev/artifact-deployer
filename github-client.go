@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"sort"
+	"strconv"
 
 	"github.com/google/go-github/v55/github"
 )
@@ -46,8 +47,6 @@ func downloadArtifact(ctx context.Context, client *github.Client, artifact *gith
 	if err != nil {
 		return err
 	}
-	// Maybe we can just do this manually at the end of the function?
-	defer fileContent.Body.Close()
 
 	// Create the artifact file
 	file, err := os.Create(artifactFilename)
@@ -60,9 +59,28 @@ func downloadArtifact(ctx context.Context, client *github.Client, artifact *gith
 		return err
 	}
 
-	defer file.Close()
+	// Log the size of the artifact
+	if size < 1024 {
+		log.Println(artifactFilename + ": " + strconv.FormatInt(size, 10) + " B")
+	} else if size < 1024 * 1024 {
+		filesizeKb := strconv.FormatFloat(float64(size) / 1024.0, 'f', 2, 64 )
+		log.Println(artifactFilename + ": " + filesizeKb + " kB")
+	} else {
+		filesizeMb := strconv.FormatFloat(float64(size) / 1024.0 / 1024.0, 'f', 2, 64 )
+		log.Println(artifactFilename + ": " + filesizeMb + " MB")
+	}
 
-	log.Println(artifactFilename, ": ", size)
+	// Close the HTTP response
+	err = fileContent.Body.Close()
+	if err != nil {
+		return err
+	}
+
+	// Close the file we just wrote
+	err = file.Close()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

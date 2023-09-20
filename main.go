@@ -21,7 +21,7 @@ func main() {
 
 	// Set up logging
 	log.SetPrefix("[AD] ")
-	log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmsgprefix)
+	log.SetFlags(log.LstdFlags | log.Lmsgprefix)
 
 	// Load environment variables
 	err := godotenv.Load()

@@ -49,12 +49,10 @@ func deploy(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		log.Println("Requested SHA:", params.HeadSha)
-
 		// Create a github client
 		ctx := context.Background()
 		token := os.Getenv("GITHUB_PAT")
-		artifactFilename := os.Getenv("TEMP_FILENAME")
+		artifactFilename := "/tmp/" + os.Getenv("TEMP_FILENAME")
 
 		client := github.NewClient(nil).WithAuthToken(token)
 
@@ -66,7 +64,8 @@ func deploy(w http.ResponseWriter, r *http.Request) {
 		}
 
 		headSha := newest.GetWorkflowRun().GetHeadSHA()
-		log.Println("Head SHA:", headSha)
+		log.Println("Requested commit SHA:", params.HeadSha)
+		log.Println("Head commit SHA:     ", headSha)
 
 		// Check if the SHA requested matches the newest artifact's commit SHA
 		if headSha != params.HeadSha {
