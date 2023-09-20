@@ -4,31 +4,79 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"io"
 	"net/http"
 	"os"
+	"encoding/json"
 	
 	"github.com/google/go-github/v55/github"
 )
+
+
+type DeployParameters struct {
+	HeadSha string
+	Handshake string
+}
+
+func getDeployParameters (r *http.Request) (*DeployParameters, error) {
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var deployParams DeployParameters
+	err = json.Unmarshal(body, &deployParams)
+	if err != nil {
+		return nil, err
+	}
+
+	return &deployParams, nil
+
+}
 
 func deploy(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "PUT" {
 
+		// Parse the request body
+		params, err := getDeployParameters(r)
+		if err != nil {
+			http400Error(w, err, "Error parsing request body: ")
+			return
+		}
+
+		// Create a github client
 		ctx := context.Background()
 		token := os.Getenv("GITHUB_PAT")
 		artifactFilename := os.Getenv("TEMP_FILENAME")
 
 		client := github.NewClient(nil).WithAuthToken(token)
 
+		// Fetch the latest artifact
 		newest, err := getNewestArtifact(ctx, client)
 		if err != nil {
 			http500Error(w, err, "")
 			return
 		}
 
-		headSha := newest.GetWorkflowRun().HeadSHA
-		log.Println("Head SHA: ", github.Stringify(headSha))
+		headSha := newest.GetWorkflowRun().GetHeadSHA()
+		log.Println("Head SHA: ", headSha)
 
+		// Check if the SHA requested matches the newest artifact's commit SHA
+		if headSha != params.HeadSha {
+			http409Error(w, err, "Requested SHA is not the newest.")
+			return
+		}
+
+		// Check if the handshake matches
+		ok := checkHandshake(params.Handshake, headSha)
+		if !ok {
+			http401Error(w, err, "Incorrect handshake.")
+			return
+		}
+
+		// Prepare the deployment directory
 		destination, err := getDeployDestination()
 		if err != nil {
 			http500Error(w, err, "Error preparing deployment: ")

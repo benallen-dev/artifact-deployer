@@ -28,10 +28,6 @@ func getNewestArtifact(ctx context.Context, client *github.Client) (*github.Arti
 
 	newest := artifacts.Artifacts[0]
 
-	headSha := newest.GetWorkflowRun().HeadSHA
-
-	log.Println("Head SHA: ", github.Stringify(headSha))
-
 	return newest, nil
 }
 

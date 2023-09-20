@@ -9,13 +9,13 @@ import (
 	"github.com/joho/godotenv"
 )
 
-
 func hello(w http.ResponseWriter, r *http.Request) {
 
 	log.Println("Received request for path: ", r.URL.Path)
 	fmt.Fprintf(w, "Hello World!")
 
 }
+
 
 func main() {
 
