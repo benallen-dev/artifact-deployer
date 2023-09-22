@@ -81,17 +81,24 @@ func deploy(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Prepare the deployment directory
-		destination, err := getDeployDestination()
+		destination, err := getDeployDestination(headSha)
 		if err != nil {
-			http500Error(w, err, "Error preparing deployment: ")
-			return
+			if err.Error() == "Commit is already deployed" {
+				http409Error(w, err, "Error preparing deployment:")
+				return
+			} else {
+				http500Error(w, err, "Error preparing deployment: ")
+				return
+			}
 		}
+
+		log.Println("Deploying to:", destination)
 
 		// Download the artifact
 		// What would be super cool is to keep the file in memory instead of writing to disk
 		err = downloadArtifact(ctx, client, newest, artifactFilename)
 		if err != nil {
-			http500Error(w, err, "Error downloading artifact: ")
+			http500Error(w, err, "Error downloading artifact:")
 			return
 		}
 
@@ -106,6 +113,13 @@ func deploy(w http.ResponseWriter, r *http.Request) {
 		err = os.Remove(artifactFilename)
 		if err != nil {
 			http500Error(w, err, "Error deleting artifact file: ")
+			return
+		}
+
+		// Update the symlink
+		err = updateSymlink(destination)
+		if err != nil {
+			http500Error(w, err, "Error updating symlink: ")
 			return
 		}
 

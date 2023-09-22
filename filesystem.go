@@ -8,29 +8,31 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
-func getDeployDestination() (string, error) {
-
-	// If it already exists, rename the existing directory
+func getBaseDir() (string, error) {
+	
 	homedir, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
 	}
 
-	dst := homedir + "/www/" + os.Getenv("SITE_DIR")
+	return homedir + "/www/" + os.Getenv("SITE_DIR"), nil
+}
+
+func getDeployDestination(headSha string) (string, error) {
+
+	baseDir, err := getBaseDir()
+	if err != nil {
+		return "", err
+	}
+
+	// If it already exists, rename the existing directory
+	dst := baseDir + "-" + headSha[0:12]
 
 	if _, err := os.Stat(dst); err == nil {
-		log.Println("Destination directory already exists, renaming existing dir with current time...")
-		// get current datetime
-		// rename existing directory to include datetime
-		datetime := time.Now().Format("2006-01-02--15-04-05")
-
-		err = os.Rename(dst, dst+"--"+datetime)
-		if err != nil {
-			return "", err
-		}
+		// Shit son it already exists
+		return "", errors.New("Commit is already deployed")
 	}
 
 	return dst, nil
@@ -79,6 +81,32 @@ func extractArtifact(artifactFilename string, dst string) error {
 	}
 
 	log.Println("Unzipped artifact")
+
+	// No errors, no problem
+	return nil
+}
+
+func updateSymlink(dst string) error {
+
+	baseDir, err := getBaseDir()
+	if err != nil {
+		return err
+	}
+
+	// Remove the existing symlink
+	err = os.Remove(baseDir)
+	if err != nil && !os.IsNotExist(err) {
+		// If the error is not "file does not exist", it's an actual error
+		return err
+	}
+
+	// Create a new symlink
+	err = os.Symlink(dst, baseDir)
+	if err != nil {
+		return err
+	}
+
+	log.Println("Updated symlink")
 
 	// No errors, no problem
 	return nil

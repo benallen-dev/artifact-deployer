@@ -19,7 +19,7 @@ func http403Error(w http.ResponseWriter, err error, msg string) {
 	//w.Write([]byte("403 - Forbidden"))
 }
 
-// Used when attmepting to to deploy a commit SHA that doesn't match the latest artifact
+// Used when attmepting to to deploy a commit SHA that doesn't match the latest artifact, or when the latest artifact is already deployed
 func http409Error(w http.ResponseWriter, err error, msg string) {
 	log.Println("[HTTP 409]", msg, err)
 	w.WriteHeader(http.StatusConflict)
