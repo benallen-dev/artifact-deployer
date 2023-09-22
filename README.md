@@ -50,5 +50,6 @@ go install
 
 
 ## Todo:
-- [ ] Check which SHA is deployed to avoid deploying more than once
+- [ ] Add proper doc comments
+- [ ] Clean up deploy dir to avoid unbounded disk usage
 - [ ] I'm not super happy with how I'm doing code splitting here, having everything in the root as part of the `main` package feels a bit disorganised.
