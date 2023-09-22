@@ -2,9 +2,9 @@ package main
 
 import (
 	"crypto/sha1"
+	"encoding/hex"
 	"log"
 	"os"
-	"encoding/hex"
 )
 
 func checkHandshake(handshake string, headSha string) bool {

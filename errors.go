@@ -32,4 +32,3 @@ func http500Error(w http.ResponseWriter, err error, msg string) {
 	w.WriteHeader(http.StatusInternalServerError)
 	//w.Write([]byte("500 - Internal Server Error"))
 }
-
