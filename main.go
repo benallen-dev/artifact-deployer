@@ -18,7 +18,7 @@ func hello(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 
-	version := "v1.0.0"
+	version := "v1.0.1"
 
 	// Set up logging
 	log.SetPrefix("[AD] ")
