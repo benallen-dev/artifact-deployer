@@ -18,12 +18,17 @@ func hello(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 
+	version := "v1.0.0"
+
 	// Set up logging
 	log.SetPrefix("[AD] ")
 	log.SetFlags(log.LstdFlags | log.Lmsgprefix)
 
 	// Load environment variables
 	err := godotenv.Load()
+
+	// Log version
+	log.Println("Artifact deployer", version)
 
 	welcomeMsg := os.Getenv("WELCOME_MSG")
 	log.Println(welcomeMsg)
